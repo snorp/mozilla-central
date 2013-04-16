@@ -720,3 +720,6 @@ pref("media.peerconnection.enabled", false);
 
 // Make <audio> and <video> talk to the AudioChannelService.
 pref("media.useAudioChannelService", true);
+
+pref("gfx.canvas.azure.accelerated", true);
+pref("gfx.canvas.azure.backends", "skia");
