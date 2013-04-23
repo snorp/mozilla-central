@@ -15,7 +15,7 @@ namespace mozilla {
 namespace gfx {
 
 SourceSurfaceSkia::SourceSurfaceSkia()
-  : mDrawTarget(nullptr)
+  : mDrawTarget(nullptr), mPixelsShared(false)
 {
 }
 
@@ -34,6 +34,24 @@ SurfaceFormat
 SourceSurfaceSkia::GetFormat() const
 {
   return mFormat;
+}
+
+bool
+SourceSurfaceSkia::InitFromCanvas(SkCanvas* aCanvas,
+                                  SurfaceFormat aFormat,
+                                  DrawTargetSkia* aOwner)
+{
+  SkISize size = aCanvas->getDeviceSize();
+
+  mBitmap = (SkBitmap)aCanvas->getDevice()->accessBitmap(false);
+  mFormat = aFormat;
+
+  mSize = IntSize(size.fWidth, size.fHeight);
+  mStride = mBitmap.rowBytes();
+  mDrawTarget = aOwner;
+  mPixelsShared = true;
+
+  return true;
 }
 
 bool 
@@ -62,27 +80,8 @@ SourceSurfaceSkia::InitFromData(unsigned char* aData,
   mSize = aSize;
   mFormat = aFormat;
   mStride = aStride;
+  mPixelsShared = false;
   return true;
-}
-
-bool
-SourceSurfaceSkia::InitWithBitmap(const SkBitmap& aBitmap,
-                                  SurfaceFormat aFormat,
-                                  DrawTargetSkia* aOwner)
-{
-  mFormat = aFormat;
-  mSize = IntSize(aBitmap.width(), aBitmap.height());
-
-  if (aOwner) {
-    mBitmap = aBitmap;
-    mStride = aBitmap.rowBytes();
-    mDrawTarget = aOwner;
-    return true;
-  } else if (aBitmap.copyTo(&mBitmap, aBitmap.getConfig())) {
-    mStride = mBitmap.rowBytes();
-    return true;
-  }
-  return false;
 }
 
 unsigned char*
@@ -98,10 +97,12 @@ SourceSurfaceSkia::GetData()
 void
 SourceSurfaceSkia::DrawTargetWillChange()
 {
-  if (mDrawTarget) {
+  if (mPixelsShared && mDrawTarget) {
     mDrawTarget = nullptr;
+
     SkBitmap temp = mBitmap;
     mBitmap.reset();
+
     temp.copyTo(&mBitmap, temp.getConfig());
   }
 }

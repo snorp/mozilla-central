@@ -748,6 +748,7 @@ gfxPlatform::GetThebesSurfaceForDrawTarget(DrawTarget *aTarget)
   surf->SetData(&kDrawSourceSurface, data.forget().drop(), DataSourceSurfaceDestroy);
   // keep the draw target alive as long as we need its data
   aTarget->AddRef();
+  source->AddRef();
   surf->SetData(&kDrawTargetForSurface, aTarget, DataDrawTargetDestroy);
 
   return surf.forget();
